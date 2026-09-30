@@ -145,3 +145,56 @@ function buildChips() {
   });
   markChip();
 }
+function markChip() {
+  document.querySelectorAll('.chip').forEach((chip, i) => {
+    chip.classList.toggle('active', CHIP_VALUES[i] === state.chip);
+  });
+}
+
+function placeBet(key) {
+  if (state.spinning) return;
+  if (state.balance < state.chip) {
+    $('result').textContent = 'Saldo insuficiente. Recarga o elige una ficha menor.';
+    return;
+  }
+  state.balance -= state.chip;
+  state.bets[key] = (state.bets[key] || 0) + state.chip;
+  saveBalance();
+  render();
+}
+
+function clearBets() {
+  if (state.spinning) return;
+  state.balance += totalBet();
+  state.bets = {};
+  saveBalance();
+  render();
+}
+
+function spin() {
+  if (state.spinning || totalBet() === 0) return;
+  state.spinning = true;
+  $('result').textContent = 'No va más...';
+  render();
+
+  const index = Math.floor(Math.random() * ORDER.length);
+  const step = 360 / ORDER.length;
+  const current = ((state.rotation % 360) + 360) % 360;
+  const target = (360 - index * step) % 360;
+
+  state.rotation += 360 * 5 + ((target - current + 360) % 360);
+  $('wheel').style.transform = `rotate(${state.rotation}deg)`;
+
+  setTimeout(() => finishSpin(ORDER[index]), 4200);
+}
+
+function finishSpin(n) {
+  let payout = 0;
+  Object.entries(state.bets).forEach(([key, amount]) => {
+    if (key.startsWith('n:')) {
+      if (Number(key.slice(2)) === n) payout += amount * 36;
+    } else {
+      const zone = OUTSIDE.find(z => z.key === key);
+      if (zone.test(n)) payout += amount * zone.pays;
+    }
+  });
