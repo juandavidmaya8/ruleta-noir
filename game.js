@@ -15,3 +15,35 @@ const OUTSIDE = [
   { key: 'odd', label: 'Impar', span: 2, pays: 2, test: n => n % 2 === 1 },
   { key: 'high', label: '19-36', span: 2, pays: 2, test: n => n >= 19 }
 ];
+const money = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+const state = { balance: 0, chip: 5000, bets: {}, spinning: false, rotation: 0 };
+let dialogMode = 'deposit';
+
+const $ = id => document.getElementById(id);
+const fmt = value => money.format(value).replace(/\s/g, '');
+
+function loadBalance() {
+  try { state.balance = Number(localStorage.getItem('noir-balance')) || 0; } catch (e) { /* storage unavailable */ }
+}
+
+function saveBalance() {
+  try { localStorage.setItem('noir-balance', state.balance); } catch (e) { /* storage unavailable */ }
+}
+
+function totalBet() {
+  return Object.values(state.bets).reduce((sum, amount) => sum + amount, 0);
+}
+
+function render() {
+  $('balance').textContent = fmt(state.balance);
+  $('total-bet').textContent = fmt(totalBet());
+
+  document.querySelectorAll('[data-bet]').forEach(cell => {
+    const amount = state.bets[cell.dataset.bet];
+    cell.classList.toggle('has-bet', Boolean(amount));
+    cell.dataset.chip = amount ? fmt(amount) : '';
+  });
+
+  $('btn-spin').disabled = state.spinning || totalBet() === 0;
+  ['btn-deposit', 'btn-withdraw', 'btn-clear'].forEach(id => { $(id).disabled = state.spinning; });
+}
