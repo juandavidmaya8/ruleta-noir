@@ -198,3 +198,72 @@ function finishSpin(n) {
       if (zone.test(n)) payout += amount * zone.pays;
     }
   });
+  const net = payout - totalBet();
+  state.balance += payout;
+  saveBalance();
+
+  let message = `Salió el ${n}. `;
+  if (net > 0) message += `Ganaste ${fmt(net)}.`;
+  else if (net === 0) message += 'Recuperaste tu apuesta.';
+  else message += `Perdiste ${fmt(-net)}.`;
+  $('result').textContent = message;
+
+  addHistory(n);
+  state.bets = {};
+  state.spinning = false;
+  render();
+}
+
+function addHistory(n) {
+  const dot = document.createElement('span');
+  dot.className = `dot ${n === 0 ? 'zero' : WHITE.has(n) ? 'white' : 'black'}`;
+  dot.textContent = n;
+  const box = $('history');
+  box.prepend(dot);
+  while (box.children.length > 10) box.lastChild.remove();
+}
+
+function openDialog(mode) {
+  if (state.spinning) return;
+  dialogMode = mode;
+  $('dialog-title').textContent = mode === 'deposit' ? 'Recargar saldo' : 'Retirar saldo';
+  $('amount').value = '';
+  $('dialog-error').textContent = '';
+  $('money-dialog').showModal();
+  $('amount').focus();
+}
+
+function confirmDialog() {
+  const amount = Math.floor(Number($('amount').value));
+
+  if (!amount || amount <= 0) {
+    $('dialog-error').textContent = 'Escribe un monto mayor a cero.';
+    return;
+  }
+  if (dialogMode === 'withdraw' && amount > state.balance) {
+    $('dialog-error').textContent = `Solo tienes ${fmt(state.balance)} disponibles.`;
+    return;
+  }
+
+  state.balance += dialogMode === 'deposit' ? amount : -amount;
+  saveBalance();
+  render();
+  $('money-dialog').close();
+  $('result').textContent = dialogMode === 'deposit'
+    ? `Recargaste ${fmt(amount)}. Haz tu apuesta.`
+    : `Retiraste ${fmt(amount)}.`;
+}
+
+$('btn-spin').addEventListener('click', spin);
+$('btn-clear').addEventListener('click', clearBets);
+$('btn-deposit').addEventListener('click', () => openDialog('deposit'));
+$('btn-withdraw').addEventListener('click', () => openDialog('withdraw'));
+$('dialog-ok').addEventListener('click', confirmDialog);
+$('dialog-cancel').addEventListener('click', () => $('money-dialog').close());
+$('amount').addEventListener('keydown', e => { if (e.key === 'Enter') confirmDialog(); });
+
+loadBalance();
+drawWheel();
+buildBoard();
+buildChips();
+render();
