@@ -101,3 +101,47 @@ function makeCell(text, key, className) {
   el.addEventListener('click', () => placeBet(key));
   return el;
 }
+function buildBoard() {
+  const board = $('board');
+
+  const zero = makeCell('0', 'n:0', 'cell zero');
+  zero.style.gridRow = '1 / span 3';
+  zero.style.gridColumn = '1';
+  board.append(zero);
+
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 12; col++) {
+      const n = col * 3 + (3 - row);
+      const cell = makeCell(n, `n:${n}`, `cell num ${WHITE.has(n) ? 'white' : 'black'}`);
+      cell.style.gridRow = row + 1;
+      cell.style.gridColumn = col + 2;
+      board.append(cell);
+    }
+  }
+
+  let dozenCol = 2;
+  let sideCol = 2;
+  OUTSIDE.forEach(zone => {
+    const isDozen = zone.span === 4;
+    const cell = makeCell(zone.label, zone.key, `cell side ${zone.key}`);
+    cell.style.gridRow = isDozen ? 4 : 5;
+    cell.style.gridColumn = `${isDozen ? dozenCol : sideCol} / span ${zone.span}`;
+    if (isDozen) dozenCol += 4;
+    else sideCol += 2;
+    board.append(cell);
+  });
+}
+
+function buildChips() {
+  CHIP_VALUES.forEach(value => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = `${value / 1000}K`;
+    chip.addEventListener('click', () => {
+      state.chip = value;
+      markChip();
+    });
+    $('chips').append(chip);
+  });
+  markChip();
+}
