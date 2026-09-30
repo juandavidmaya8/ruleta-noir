@@ -47,3 +47,57 @@ function render() {
   $('btn-spin').disabled = state.spinning || totalBet() === 0;
   ['btn-deposit', 'btn-withdraw', 'btn-clear'].forEach(id => { $(id).disabled = state.spinning; });
 }
+function drawWheel() {
+  const canvas = $('wheel');
+  const ctx = canvas.getContext('2d');
+  const c = canvas.width / 2;
+  const step = (Math.PI * 2) / ORDER.length;
+
+  ctx.beginPath();
+  ctx.arc(c, c, c - 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#000';
+  ctx.fill();
+
+  ORDER.forEach((n, i) => {
+    const start = i * step - step / 2 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(c, c);
+    ctx.arc(c, c, c - 14, start, start + step);
+    ctx.closePath();
+    ctx.fillStyle = n === 0 ? '#666' : WHITE.has(n) ? '#f0f0f0' : '#000';
+    ctx.fill();
+    ctx.strokeStyle = '#888';
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(c, c);
+    ctx.rotate(i * step);
+    ctx.fillStyle = WHITE.has(n) ? '#000' : '#fff';
+    ctx.font = 'bold 15px Georgia';
+    ctx.textAlign = 'center';
+    ctx.fillText(n, 0, -(c - 38));
+    ctx.restore();
+  });
+
+  ctx.beginPath();
+  ctx.arc(c, c, c * 0.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#1c1c1c';
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#bbb';
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(c, c, 14, 0, Math.PI * 2);
+  ctx.fillStyle = '#ddd';
+  ctx.fill();
+}
+
+function makeCell(text, key, className) {
+  const el = document.createElement('button');
+  el.className = className;
+  el.textContent = text;
+  el.dataset.bet = key;
+  el.addEventListener('click', () => placeBet(key));
+  return el;
+}
